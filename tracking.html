@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SITTA - Tracking Delivery Order</title>
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@3.5.8/dist/vuetify.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <v-app>
+      <v-app-bar color="secondary" prominent>
+        <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
+        <v-toolbar-title>SITTA UT - Tracking Delivery Order</v-toolbar-title>
+        <v-spacer></v-spacer>
+        <v-btn icon="mdi-home" href="index.html" title="Kembali ke Beranda"></v-btn>
+      </v-app-bar>
+
+      <v-navigation-drawer v-model="drawer" location="left" temporary>
+        <v-list>
+          <v-list-item prepend-icon="mdi-home" title="Beranda" href="index.html"></v-list-item>
+          <v-list-item prepend-icon="mdi-bookshelf" title="Stok Bahan Ajar" href="stok.html"></v-list-item>
+          <v-list-item prepend-icon="mdi-truck-delivery" title="Tracking DO" href="tracking.html"></v-list-item>
+        </v-list>
+      </v-navigation-drawer>
+
+      <v-main>
+        <v-container>
+          <v-row>
+            <v-col cols="12" md="5">
+              <v-card>
+                <v-card-title class="bg-secondary text-white">
+                  Formulir Delivery Order Baru
+                </v-card-title>
+                <v-card-text class="pt-4">
+                  <v-form @submit.prevent="submitDO">
+                    <!-- Automatically Generated DO Number -->
+                    <v-text-field :model-value="generateDO" label="Nomor DO (Auto Generated)" readonly
+                      variant="filled"></v-text-field>
+
+                    <v-text-field v-model="formData.nim" label="NIM" required variant="outlined"></v-text-field>
+
+                    <v-text-field v-model="formData.nama" label="Nama Mahasiswa" required
+                      variant="outlined"></v-text-field>
+
+                    <v-select v-model="formData.upbjj" :items="upbjjList" label="Pilih UPBJJ" required
+                      variant="outlined"></v-select>
+
+                    <v-select v-model="formData.ekspedisi" :items="pengirimanList" item-title="nama" item-value="kode"
+                      label="Ekspedisi" required variant="outlined"></v-select>
+
+                    <v-select v-model="formData.paketKode" :items="paketList" item-title="nama" item-value="kode"
+                      label="Paket Bahan Ajar" required variant="outlined">
+                      <template v-slot:item="{ props, item }">
+                        <v-list-item v-bind="props" :title="`${item.raw.kode} - ${item.raw.nama}`"></v-list-item>
+                      </template>
+                      <template v-slot:selection="{ item }">
+                        <span>{{ item.raw.kode }} - {{ item.raw.nama }}</span>
+                      </template>
+                    </v-select>
+
+                    <!-- Package Details display conditional rendering -->
+                    <v-alert v-if="selectedPaketInfo" type="info" variant="tonal" class="mb-4">
+                      <strong>Isi Paket:</strong>
+                      <ul>
+                        <li v-for="(isi, i) in selectedPaketInfo.isi" :key="i">{{ isi }}</li>
+                      </ul>
+                    </v-alert>
+
+                    <v-text-field v-model="formData.tanggalKirim" label="Tanggal Kirim" type="date" required
+                      variant="outlined"></v-text-field>
+
+                    <v-text-field :model-value="`Rp ${totalHarga.toLocaleString('id-ID')}`" label="Total Harga" readonly
+                      variant="filled"></v-text-field>
+
+                    <v-alert v-model="formIsInvalid" density="compact"
+                      text="Harap lengkapi semua field yang wajib diisi!" title="Form Tidak Valid" type="error" closable
+                      class="mb-4"></v-alert>
+
+                    <v-btn type="submit" color="secondary" block size="large">
+                      Buat Delivery Order
+                    </v-btn>
+                  </v-form>
+                </v-card-text>
+              </v-card>
+            </v-col>
+
+            <v-col cols="12" md="7">
+              <v-card>
+                <v-card-title>
+                  Daftar Delivery Order
+                </v-card-title>
+                <v-card-text>
+                  <div class="v-table v-table--has-top v-table--density-default">
+                    <div class="v-table__wrapper">
+                      <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                          <tr>
+                            <th>No. DO</th>
+                            <th>NIM</th>
+                            <th>Nama</th>
+                            <th>UPBJJ</th>
+                            <th>Paket</th>
+                            <th>Ekspedisi</th>
+                            <th>Tanggal Kirim</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr v-for="item in trackingList" :key="item.noDO">
+                            <td>{{ item.noDO }}</td>
+                            <td>{{ item.nim }}</td>
+                            <td>{{ item.nama }}</td>
+                            <td>{{ item.upbjj }}</td>
+                            <td>{{ item.paketKode }}</td>
+                            <td>{{ item.ekspedisi }}</td>
+                            <td>{{ item.tanggalKirim }}</td>
+                            <td>Rp {{ item.total.toLocaleString('id-ID') }}</td>
+                            <td>
+                              <v-chip size="small" color="primary">{{ item.status }}</v-chip>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-container>
+      </v-main>
+    </v-app>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@3.5.8/dist/vuetify.min.js"></script>
+  <script src="js/tracking-app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SITTA - Stok Bahan Ajar</title>
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@3.5.8/dist/vuetify.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <v-app>
+      <v-app-bar color="primary" prominent>
+        <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
+        <v-toolbar-title>SITTA UT - Stok Bahan Ajar</v-toolbar-title>
+        <v-spacer></v-spacer>
+        <v-btn icon="mdi-home" href="index.html" title="Kembali ke Beranda"></v-btn>
+      </v-app-bar>
+
+      <v-navigation-drawer v-model="drawer" location="left" temporary>
+        <v-list>
+          <v-list-item prepend-icon="mdi-home" title="Beranda" href="index.html"></v-list-item>
+          <v-list-item prepend-icon="mdi-bookshelf" title="Stok Bahan Ajar" href="stok.html"></v-list-item>
+          <v-list-item prepend-icon="mdi-truck-delivery" title="Tracking DO" href="tracking.html"></v-list-item>
+        </v-list>
+      </v-navigation-drawer>
+
+      <v-main>
+        <v-container>
+          <v-row>
+            <v-col cols="12">
+              <v-card>
+                <v-card-title class="d-flex align-center">
+                  Daftar Stok Bahan Ajar
+                  <v-spacer></v-spacer>
+                  <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">Tambah Stok</v-btn>
+                </v-card-title>
+
+                <v-card-text>
+                  <v-row class="mb-4">
+                    <v-col cols="12" md="3">
+                      <v-select v-model="filterUpbjj" :items="upbjjList" label="UT-Daerah" clearable variant="outlined"
+                        density="compact"></v-select>
+                    </v-col>
+
+                    <!-- Kategori filter is dependent on UT-Daerah -->
+                    <v-col cols="12" md="3" v-if="filterUpbjj">
+                      <v-select v-model="filterKategori" :items="kategoriList" label="Kategori" clearable
+                        variant="outlined" density="compact"></v-select>
+                    </v-col>
+
+                    <v-col cols="12" md="3">
+                      <v-select v-model="sortSelection" :items="sortOptions" label="Urutkan Berdasarkan" clearable
+                        variant="outlined" density="compact"></v-select>
+                    </v-col>
+
+                    <v-col cols="12" md="3" class="d-flex align-center">
+                      <v-checkbox v-model="filterReorder" label="Butuh Reorder" color="error" hide-details></v-checkbox>
+                      <v-btn icon="mdi-refresh" variant="text" @click="resetFilters" title="Reset Filter"></v-btn>
+                    </v-col>
+                  </v-row>
+
+                  <v-alert v-model="alertStokMenipis" density="compact"
+                    text="Beberapa stok bahan ajar menipis. Segera lakukan pemesanan ulang untuk menghindari kehabisan stok."
+                    title="Stok Menipis" type="warning" closable></v-alert>
+
+                  <v-alert v-model="alertStokKosong" density="compact"
+                    text="Beberapa stok bahan ajar habis. Segera lakukan pemesanan ulang untuk menghindari kehabisan stok."
+                    title="Stok Kosong" type="error" closable></v-alert>
+
+                  <div class="v-table v-table--has-top v-table--density-default">
+                    <div class="v-table__wrapper">
+                      <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                          <tr>
+                            <th>Judul</th>
+                            <th>Kategori</th>
+                            <th>UPBJJ</th>
+                            <th>Lokasi Rak</th>
+                            <th>Stok</th>
+                            <th>Stok Minimal</th>
+                            <th>Harga</th>
+                            <th>Status</th>
+                            <th>Catatan</th>
+                            <th>Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr v-for="item in filteredStok" :key="item.kode">
+                            <td>
+                              <div class="text-title-small font-weight-bold">{{item.judul}}</div>
+                              <v-badge color="indigo-darken-3" text-color="white" :content="item.kode" inline></v-badge>
+                            </td>
+                            <td>
+                              <v-chip size="small" :color="getKategoriColor(item.kategori)">{{ item.kategori }}</v-chip>
+                            </td>
+                            <td v-text="item.upbjj"></td>
+                            <td v-text="item.lokasiRak"></td>
+                            <td v-text="item.qty"></td>
+                            <td v-text="item.safety"></td>
+                            <td v-text="'Rp ' + item.harga.toLocaleString('id-ID')"></td>
+                            <td>
+                              <v-chip :color="getStatusInfo(item.qty, item.safety).color" size="small">
+                                <v-icon start size="small">{{ getStatusInfo(item.qty, item.safety).icon }}</v-icon>
+                                {{ getStatusInfo(item.qty, item.safety).text }}
+                              </v-chip>
+                            </td>
+                            <td v-html="item.catatanHTML"></td>
+                            <td>
+                              <v-btn icon="mdi-pencil" size="small" variant="text" color="primary"
+                                @click="openEditDialog(item)"></v-btn>
+                              <v-btn icon="mdi-delete" size="small" variant="text" color="error"
+                                @click="openDeleteDialog(item)"></v-btn>
+                            </td>
+                          </tr>
+                          <tr v-if="filteredStok.length === 0">
+                            <td colspan="11" class="text-center">Data tidak ditemukan.</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-container>
+      </v-main>
+
+      <v-dialog v-model="dialog" max-width="600px">
+        <v-card>
+          <v-card-title>
+            <span class="text-h5">{{ isEdit ? 'Edit Stok' : 'Tambah Stok Baru' }}</span>
+          </v-card-title>
+          <v-card-text>
+            <v-container>
+              <v-row>
+                <v-col cols="12" sm="6">
+                  <v-text-field v-model="formData.kode" label="Kode Mata Kuliah*" required
+                    :readonly="isEdit"></v-text-field>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-text-field v-model="formData.judul" label="Judul Mata Kuliah*" required></v-text-field>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-select v-model="formData.kategori" :items="kategoriList" label="Kategori*" required></v-select>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-select v-model="formData.upbjj" :items="upbjjList" label="UPBJJ (UT-Daerah)*" required></v-select>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-text-field v-model="formData.lokasiRak" label="Lokasi Rak"></v-text-field>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-text-field v-model.number="formData.harga" label="Harga" type="number"></v-text-field>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-text-field v-model.number="formData.qty" label="Jumlah Stok (Qty)" type="number"></v-text-field>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-text-field v-model.number="formData.safety" label="Safety Stock" type="number"></v-text-field>
+                </v-col>
+                <v-col cols="12">
+                  <v-textarea v-model="formData.catatanHTML" label="Catatan (Mendukung HTML)" rows="2"></v-textarea>
+                </v-col>
+              </v-row>
+            </v-container>
+            <small>*Wajib diisi</small>
+            <v-alert v-model="formIsInvalid" density="compact" text="Kode dan Judul harus diisi!"
+              title="Form Tidak Valid" type="error" closable></v-alert>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue-darken-1" variant="text" @click="dialog = false">Batal</v-btn>
+            <v-btn color="blue-darken-1" variant="text" @click="saveForm">Simpan</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+    </v-app>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@3.5.8/dist/vuetify.min.js"></script>
+  <script src="js/stok-app.js"></script>
+</body>
+
+</html>

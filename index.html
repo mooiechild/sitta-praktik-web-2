@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SITTA - Sistem Informasi Pemesanan Bahan Ajar</title>
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@3.5.8/dist/vuetify.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <v-app>
+      <v-app-bar color="primary" prominent>
+        <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
+        <v-toolbar-title>SITTA UT</v-toolbar-title>
+        <v-spacer></v-spacer>
+      </v-app-bar>
+
+      <v-navigation-drawer v-model="drawer" location="left" temporary>
+        <v-list>
+          <v-list-item prepend-icon="mdi-home" title="Beranda" href="index.html"></v-list-item>
+          <v-list-item prepend-icon="mdi-bookshelf" title="Stok Bahan Ajar" href="stok.html"></v-list-item>
+          <v-list-item prepend-icon="mdi-truck-delivery" title="Tracking DO" href="tracking.html"></v-list-item>
+        </v-list>
+      </v-navigation-drawer>
+
+      <v-main>
+        <v-container>
+          <v-row class="mt-5">
+            <v-col cols="12" class="text-center">
+              <h1 class="text-h3 font-weight-bold mb-4">Selamat Datang di SITTA</h1>
+              <p class="text-subtitle-1">Sistem Informasi Pemesanan Bahan Ajar Universitas Terbuka</p>
+            </v-col>
+          </v-row>
+          <v-row class="mt-8">
+            <v-col cols="12" md="6">
+              <v-card class="mx-auto" max-width="400" hover href="stok.html">
+                <v-card-item>
+                  <v-card-title>
+                    <v-icon color="primary" class="mr-2">mdi-bookshelf</v-icon>
+                    Stok Bahan Ajar
+                  </v-card-title>
+                </v-card-item>
+                <v-card-text>
+                  Kelola dan pantau stok bahan ajar untuk seluruh UT-Daerah.
+                </v-card-text>
+              </v-card>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-card class="mx-auto" max-width="400" hover href="tracking.html">
+                <v-card-item>
+                  <v-card-title>
+                    <v-icon color="secondary" class="mr-2">mdi-truck-delivery</v-icon>
+                    Tracking DO
+                  </v-card-title>
+                </v-card-item>
+                <v-card-text>
+                  Buat dan lacak Delivery Order untuk pengiriman bahan ajar.
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-container>
+      </v-main>
+    </v-app>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@3.5.8/dist/vuetify.min.js"></script>
+  <script>
+    const { createApp, ref } = Vue;
+    const { createVuetify } = Vuetify;
+
+    const vuetify = createVuetify();
+
+    const app = createApp({
+      setup() {
+        const drawer = ref(false);
+        return {
+          drawer
+        };
+      }
+    });
+
+    app.use(vuetify).mount('#app');
+  </script>
+</body>
+</html>
